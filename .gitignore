@@ -5,3 +5,10 @@ MoviesList/app/__pycache__/forms.cpython-311.pyc
 MoviesList/app/__pycache__/models.cpython-311.pyc
 MoviesList/app/__pycache__/serializers.cpython-311.pyc
 MoviesList/app/__pycache__/views.cpython-311.pyc
+.idea/.gitignore
+.idea/Hackathon#2.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/inspectionProfiles/Project_Default.xml
