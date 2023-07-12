@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+
+{% block htmlhead %}
+{% load static %}
+<!--<link rel="stylesheet" href="{% static 'css/collection.css' %}">-->
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock htmlhead %}
+
+{% block content %}
+<header class="head-section">
+    <div class="head-first" style="margin-right: inherit;" onclick="history.back()">
+        <i class="fa-solid fa-arrow-left"></i>
+    </div>
+
+    <div class="search-container">
+        <input type="text" maxlength="12" placeholder="Search..." class="searchbar">
+        <i class="fa-solid fa-magnifying-glass fa-2xl button"></i>
+        <!--        <img src="https://images-na.ssl-images-amazon.com/images/I/41gYkruZM2L.png" alt="Magnifying Glass" class="button">-->
+    </div>
+
+    <div class="head-first">
+        <i class="fa-solid fa-plus trigger"></i>
+    </div>
+
+</header>
+
+
+<section class="main-container">
+
+    {% if collection %}
+
+        {% for movie in collection.movies.all %}
+        <div class="collection-container movie {% if movie.is_watched %}watched{% endif %}" data-imdb-id="{{ movie.imdb_id }}" data-movie-name="{{ movie.title }}" data-id="{{movie.id}}">
+            <i class="fa-solid fa-trash trash-icon delete-btn"></i>
+            <img class="collection-img-holder movie" src="{{movie.img_url}}"/>
+            <div class="collection-name-holder movie">
+                <p class="title">{{ movie.title }}</p>
+                <p class="subtitle">
+                    <i class="fa-solid fa-calendar"></i> {{ movie.year }}
+                    <i class="fa-solid fa-clock"></i> {{ movie.run_time }} </p>
+                    <div class="watched-checkbox">
+                        <input type="checkbox" class="movie-status"id="watched-checkbox-{{ movie.id }}" {% if movie.is_watched %}checked{% endif %} onchange="updateMovieStatus('{{ movie.id }}', this)">
+                        <label for="watched-checkbox-{{ movie.id }}">Watched</label>
+                    </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+      <p id="no_collections" style="width: 100%;font-size: 28px;color: #E6DDC4;">There are no movies in the collection.</p>
+    {% endif %}
+
+</section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="modal">
+    <div class="modal-content movie">
+        <span class="close-button">&times;</span>
+        <h1>Add movies to your list :)</h1>
+        <div class="vertical-container">
+          <input type="text" id="item-title" placeholder="Search...">
+          <button class="confrim-button" type="button">Search</button>
+        </div>
+        <div id="search-result">
+        </div>
+        
+    </div>
+</div>
+
+
+
+
+<footer>
+    <a href="{% url 'logout' %}">👻 Log out</a>
+</footer>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+
+ // Add Modal when click +
+const modal = document.querySelector(".modal");
+const trigger = document.querySelector(".trigger");
+const closeButton = document.querySelector(".close-button");
+
+function toggleModal() {
+    titleContainer.value=''
+    const container = document.querySelector('#search-result');
+    container.innerHTML=''
+    modal.classList.toggle("show-modal");
+}
+
+function windowOnClick(event) {
+    if (event.target === modal) {
+        toggleModal();
+    }
+}
+
+trigger.addEventListener("click", toggleModal);
+closeButton.addEventListener("click", toggleModal);
+window.addEventListener("click", windowOnClick);
+
+
+
+
+
+// Search moviews 
+
+// get all movies with the title as user Input via external API 
+const titleContainer=document.querySelector('#item-title')
+async function findAllMovies(){
+    const title=titleContainer.value;
+    const url=
+    `https://imdb-api.projects.thetuhin.com/search?query=${title}`
+    const response = await fetch(url);
+    const data = await response.json()
+    return data.results
+}
+
+// display movies search result on modal 
+async function displayResult(event){
+    //event.preventDefault()
+    const resultArray= await findAllMovies()
+    //console.log(resultArray)
+    const container = document.querySelector('#search-result');
+    container.innerHTML='';
+
+    resultArray.forEach(item => {
+        const movieDiv=document.createElement('div');
+        movieDiv.classList.add('movie-container')
+        movieDiv.innerHTML = `<p hidden class='titleID'> ${item.id} </p>`
+
+        if (item.image != null) {
+            movieDiv.innerHTML += `<img src="${item.image}" alt="Movie Poster" width="100" height="120">`
+        } else {
+            movieDiv.innerHTML += `<img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/A_sample_of_the_transparent_rectangle.svg" alt="Poster Missing" width="100" height="120">`
+        }
+
+        movieDiv.innerHTML +=
+            `
+            <div class="movie-info">
+                <p class="title">${item.title}</p>
+                <div class="subtitle">
+                    <div class="subtitle-element"><i class="fa-solid fa-calendar"></i> ${item.year}</div>
+                    <div class="subtitle-element"><i class="fa-solid fa-link"></i> <a href="${item.imdb}"> IMDB </a></div>
+                </div>
+            </div>
+            `
+        container.appendChild(movieDiv);
+    })
+}
+
+const confirmBtn= document.querySelector(".confrim-button");
+confirmBtn.addEventListener('click',displayResult);
+titleContainer.addEventListener('keypress',(e) =>{
+    if(e.key == "Enter"){
+        console.log("Entered keydown event!")
+        //confirmBtn.click();
+        displayResult()
+   }
+})
+
+
+
+
+
+// create a div for new item
+function dispalyItem(movie){
+
+    // Check if movie already exists...
+    let movies = document.getElementsByClassName("main-container")[0].children;
+    let duplicatesFound = false;
+
+    for (let i = 0; i < movies.length; i++) {
+        let imdbId = movies[i].getAttribute("data-imdb-id");
+        if (imdbId == movie.id) {
+            console.log("Found a duplicate!");
+            duplicatesFound = true;
+            break;
+        }
+    }
+
+    if (!duplicatesFound) {
+        console.log("Adding new movie")
+        let newdiv = document.createElement("div");
+        newdiv.classList = "movie collection-container";
+        newdiv.setAttribute("data-imdb-id", movie.id);
+        newdiv.setAttribute("data-movie-name", movie.title);
+        newdiv.innerHTML = `
+            <i class="fa-solid fa-trash trash-icon delete-btn"></i>
+            <img class="collection-img-holder movie" src="${movie.image}"/>
+            <div class="collection-name-holder movie">
+                <p class="title">${movie.title}</p>
+                <p class="subtitle">
+                    <i class="fa-solid fa-calendar"></i> ${movie.year}
+                    <i class="fa-solid fa-clock"></i> ${movie.runtime} </p>
+                <div class="watched-checkbox">
+                    <input type="checkbox" class="movie-status"id="watched-checkbox-{{ movie.id }}" {% if movie.is_watched %}checked{% endif %} onchange="updateMovieStatus('{{ movie.id }}', this)">
+                    <label for="watched-checkbox-{{ movie.id }}">Watched</label>
+                </div>
+            </div>
+        `
+
+        document.getElementsByClassName("main-container")[0].appendChild(newdiv);
+    }
+}
+
+
+function findParentClass(node, clsName) {
+    if (node.classList.contains("delete-btn")){
+        console.log("It is delete Btn")
+        return "delete"
+    }
+    else if (node.classList.contains("movie-status")){
+        console.log("It is checkbox")
+        return "checkbox"
+    }
+    else if( node.classList && !node.classList.contains(clsName)){
+        return findParentClass(node.parentNode,clsName);
+    }else if(node.classList && node.classList.contains(clsName)){
+        return node;    
+    }
+    return null;
+}
+
+
+// get movie infro from external API
+async function getMovieInfo(event){
+    event.preventDefault()
+    const movieContainerDiv = findParentClass(event.target, "movie-container");
+    if ( movieContainerDiv ) {
+        const id=movieContainerDiv.querySelector('.titleID').textContent.trim();
+        console.log(id)
+        const url=
+        `https://imdb-api.projects.thetuhin.com/title/${id}`
+        const response = await fetch(url);
+        const data = await response.json()
+        console.log(data)
+        return (({ genre,id, image, plot, rating, runtime,spokenLanguages,title,year}) =>
+        ({ genre, id, image, plot, rating, runtime,spokenLanguages,title,year }))(data);
+    }
+}
+
+
+// add movie to database using REST API 
+async function addMovie(event){
+    try{
+        const movieObj=await getMovieInfo(event);
+
+        console.log(movieObj)
+        const data = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFTOKEN': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                "title": `${movieObj.title}`,
+                "img_url": `${movieObj.image}`,
+                "year": movieObj.year,
+                "run_time": `${movieObj.runtime}`,
+                "star": movieObj.rating.star,
+                "count": movieObj.rating.count,
+                "language": `${movieObj.spokenLanguages[0].language}`,
+                "description": `${movieObj.plot}`,
+                "is_watched": false,
+                "genres": movieObj.genre,
+                "collections":[{{collection.id}}],
+                "imdb_id":`${movieObj.id}`
+            }),
+        }
+        const response= await fetch('/api/movies/create/', data)
+        dispalyItem(movieObj)
+        // it taks long time for modal to disappear
+        // it does not help by putting this line in front of data fetching 
+        modal.classList.toggle("show-modal");
+        if (response.status >= 400 && response.status < 600) {
+            throw new Error("Bad response from server");
+          }
+    }catch (error) {
+        console.log('Fetch Error', error)
+    }
+}
+
+
+
+// delete movie from DB
+async function deleteMovie(event){
+    console.log("Enetred delet collection")
+    const collectionDiv=event.target.parentNode
+    const movieId = collectionDiv.getAttribute("data-id");
+    try{
+        console.log("deleting....")
+        const deleteUrl=`http://127.0.0.1:8000/api/movies/${movieId}`
+        const response= await fetch(deleteUrl,
+        {   method:'DELETE',
+            headers: {'X-CSRFTOKEN': '{{ csrf_token }}'},})
+        collectionDiv.remove()
+        if (response.status >= 400 && response.status < 600) {
+            throw new Error("Bad response from server");
+          }
+    }
+    catch (error) {
+    console.log('Fetch Error', error)
+    }   
+}
+
+
+const deleteBtn=document.querySelector(".delete-btn")
+//deleteBtn.addEventListener('click',deleteMovie)
+
+
+document.querySelector('.modal-content').addEventListener('click',addMovie)
+
+async function goToImdb(event) {
+    const movieElement = findParentClass(event.target, "collection-container");
+    if (movieElement==="delete"){
+        console.log("Entered this part!")
+        return await deleteMovie(event);
+    }
+    else if (movieElement==="checkbox"){
+        pass
+    }
+    else if (movieElement) {
+        const imdbId = movieElement.getAttribute("data-imdb-id");
+        console.log(imdbId);
+        window.location.href = "https://www.imdb.com/title/" + imdbId;
+    }
+}
+
+document.querySelector(".main-container").addEventListener('click', goToImdb);
+
+function searchFilms(event) {
+    let searchTerm = event.target.value;
+    let movies = document.getElementsByClassName("main-container")[0].children;
+    console.log(movies);
+    for (let i = 0; i < movies.length; i++) {
+        let movieName = movies[i].getAttribute("data-movie-name").toLowerCase();
+        let nameMatch = movieName.includes(searchTerm.toLowerCase());
+        if (!nameMatch) {
+            movies[i].classList.add("hidden");
+        } else {
+            movies[i].classList.remove("hidden");
+        }
+    }
+}
+
+document.querySelector(".searchbar").addEventListener('input', searchFilms);
+
+async function updateMovieStatus(movieId, checkbox) {
+    const isChecked = checkbox.checked;
+    console.log("Entered check update....")
+    try {
+        const url = `http://127.0.0.1:8000/api/movies/${movieId}`;
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFTOKEN': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ is_watched: isChecked }),
+        });
+
+        if (response.status === 200) {
+            console.log('Movie watched status updated successfully.');
+            if (isChecked){
+                document.querySelector(`[data-id="${movieId}"]`).classList.add('watched')
+            }
+            else document.querySelector(`[data-id="${movieId}"]`).classList.remove('watched') 
+        } else {
+            throw new Error('Failed to update movie watched status.');
+        }
+    } catch (error) {
+        console.error('Fetch Error:', error);
+    }
+}
+
+
+
+
+</script>
+
+
+{% endblock %}

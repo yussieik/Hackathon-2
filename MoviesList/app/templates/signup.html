@@ -1,0 +1,54 @@
+{% load static %}
+<link rel="stylesheet" href="{% static '/css/signup.css' %}">
+<script src="{% static 'frontpage.js' %}"></script>
+
+
+<div class="main-box">
+    
+<div class="left-container">
+    <div class="signup-form-container">
+        <h1>Sign Up</h1>
+        <p>Sign up to start your journey ...</p>
+        <form method="post">
+            {% csrf_token %}
+            {% if form.errors %}
+            <div class="errormsg"><ul><li>The two passwords didn't match</li></ul></div>
+            {% endif %}
+            {{ form.username }}<br><br>
+            {{ form.password1 }}<br><br>
+            {{ form.password2 }}<br><br>
+            <button class="main-button" type="submit">Sign Up</button>
+        </form>
+    
+    </div>
+
+    
+
+    <div class="sign-in-container">
+        <p class="fake-legend"><span>Or</span>
+        </p>
+
+        <p>Already has an account? </p>
+        <button class="option-button" type="button">Log In</button>
+    </div>
+</div>
+
+
+<div class="right-container">
+
+    <img src="{% static 'img/pic3.jpg' %}" alt="Image">
+
+</div>
+
+</div>
+
+<script>
+
+    const OptionBtn=document.querySelector('.option-button');
+    OptionBtn.addEventListener('click',()=>{
+        location.href="{% url 'login' %}"
+    })
+    
+</script>
+
+

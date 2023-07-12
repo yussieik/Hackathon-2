@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block htmlhead %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock htmlhead %}
+
+
+{% block content %}
+<header class="head-section">
+
+    <div class="search-container">
+        <input type="text" maxlength="12" placeholder="Search..." class="searchbar">
+        <i class="fa-solid fa-magnifying-glass fa-2xl button"></i>
+        <!--        <img src="https://images-na.ssl-images-amazon.com/images/I/41gYkruZM2L.png" alt="Magnifying Glass" class="button">-->
+    </div>
+
+    <div class="head-first">
+        <i class="fa-solid fa-plus trigger"></i>
+    </div>
+
+</header>
+
+
+<section class="hero">
+    <div class="hero-statistics">
+        <div class="hero-statistic ">
+            <h1 id="total-count">{{collection_list.count}}</h1>
+            <h2>Total</h2>
+        </div>
+        <div class="hero-statistic">
+            <h1 id="unwatched-count">{{unwatched.count}}</h1>
+            <h2>Unwatched</h2>
+        </div>
+        <div class="hero-statistic">
+            <h1 id="completed-count">{{completed.count}}</h1>
+            <h2>Completed</h2>
+        </div>
+    </div>
+    <div class="hero-name">
+        Hi, {{user_name}} 👋
+    </div>
+</section>
+<div class="collections-title">
+    <h1>Collections</h1>
+</div>
+<section class="main-container">
+
+    {% if collection_list %}
+
+    {% for collection in collection_list %}
+    <div class="collection-container" data-id="{{ collection.id }}" data-collection-name="{{ collection.name }}">
+        <i class="fa-solid fa-trash trash-icon delete-btn"></i>
+        <div class="collection-name-holder">{{ collection.name }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p id="no_collections" style="width: 100%;font-size: 28px;color: #E6DDC4;">There are no collections.</p>
+    {% endif %}
+</section>
+
+
+<div class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h1>Make a title for your movies list!</h1>
+        <div class="vertical-container">
+            <input type="text" id="item-title" placeholder="Title...">
+            <button class="confrim-button" type="button">Confrim</button>
+        </div>
+    </div>
+</div>
+
+
+<footer>
+    <a href="{% url 'logout' %}">👻 Log out</a>
+</footer>
+
+
+<script>
+
+// Add Modal when click +
+console.log("Entered!")
+const modal = document.querySelector(".modal");
+const trigger = document.querySelector(".trigger");
+const closeButton = document.querySelector(".close-button");
+
+function toggleModal(event) {
+    titleContainer.value=''
+    modal.classList.toggle("show-modal");
+
+}
+
+function windowOnClick(event) {
+    if (event.target === modal) {
+        toggleModal();
+    }
+}
+
+trigger.addEventListener("click", toggleModal);
+closeButton.addEventListener("click", toggleModal);
+window.addEventListener("click", windowOnClick); 
+
+
+// add Collection to page 
+const titleContainer=document.querySelector('#item-title')
+async function addCollection(event){
+    const newTitle=titleContainer.value;
+    const data = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFTOKEN': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({"name":newTitle, "is_finished": false, 'user': '{{logged_in_user}}' }),
+    }
+    await fetch('/api/collections/create/', data).then((response) => {
+        if (response.status >= 400 && response.status < 600) {
+          throw new Error("Bad response from server");
+        }
+        return response.json();
+    }).then((returnedResponse) => {
+        // Response was good! What do we do now?
+        console.log("Done!");
+        var newdiv = document.createElement("div")
+        newdiv.appendChild(document.createTextNode(returnedResponse.name));
+        newdiv.classList = ["collection-container"]
+        newdiv.setAttribute("data-id", returnedResponse.id)
+        document.getElementsByClassName("main-container")[0].appendChild(newdiv);
+        document.querySelector('#total-count').textContent=parseInt(document.querySelector('#total-count').textContent)+1
+        document.querySelector('#unwatched-count').textContent=parseInt(document.querySelector('#unwatched-count').textContent)+1
+
+        if (document.querySelector("#no_collections") != null) {
+            document.querySelector("#no_collections").remove();
+        }
+
+    }).catch((error) => {
+      // Your error is here!
+      console.log(error);
+    });
+
+    modal.classList.toggle("show-modal");
+}
+
+
+function findParentClass(node, clsName) {
+    if (node.classList.contains("delete-btn")){
+        console.log("It is delete Btn")
+        return "delete"
+    }
+    else if( node.classList && !node.classList.contains(clsName)){
+        return findParentClass(node.parentNode,clsName);
+    }else if(node.classList && node.classList.contains(clsName)){
+        return node;
+    }
+    return null;
+}
+
+// hanlde redirect to collection page & delete collection 
+async function collectionDivHandler(event){
+    const collectionElement = findParentClass(event.target, "collection-container");
+    if (collectionElement==="delete"){
+        console.log("Entered this part!")
+        return await deleteCollection(event);
+    }
+    else if (collectionElement) {
+        console.log(collectionElement)
+        const collectionId = collectionElement.getAttribute("data-id");
+        console.log(collectionId);
+        window.location.href = "/collections/" + collectionId;
+    }
+}
+
+// Add collection to database and present it on the page
+
+const confirmBtn = document.querySelector(".confrim-button");
+confirmBtn.addEventListener('click',addCollection)
+titleContainer.addEventListener('keypress',(e) =>{
+    if(e.key == "Enter"){
+        console.log("Entered keydown event!")
+        //confirmBtn.click();
+        addCollection()
+   }
+})
+
+
+const mainContainer = document.querySelector(".main-container");
+mainContainer.addEventListener('click',collectionDivHandler)
+
+
+
+// Delete collection from DB 
+const deleteBtn=document.querySelector(".delete-btn")
+
+async function deleteCollection(event){
+    console.log("Enetred delet collection")
+    const collectionDiv=event.target.parentNode
+    const collectionId = collectionDiv.getAttribute("data-id");
+    try{
+        console.log("deleting....")
+        const deleteUrl=`http://127.0.0.1:8000/api/collections/${collectionId}`
+        const response= await fetch(deleteUrl,
+        {   method:'DELETE',
+            headers: {'X-CSRFTOKEN': '{{ csrf_token }}'},})
+        collectionDiv.remove()
+        document.querySelector('#total-count').textContent=parseInt(document.querySelector('#total-count').textContent)-1
+        document.querySelector('#unwatched-count').textContent=parseInt(document.querySelector('#unwatched-count').textContent)-1
+        if (response.status >= 400 && response.status < 600) {
+            throw new Error("Bad response from server");
+          }
+    }
+    catch (error) {
+    console.log('Fetch Error', error)
+    }   
+}
+
+function searchFilms(event) {
+    let searchTerm = event.target.value;
+    let movies = document.getElementsByClassName("main-container")[0].children;
+    console.log(movies);
+    for (let i = 0; i < movies.length; i++) {
+        let movieName = movies[i].getAttribute("data-collection-name").toLowerCase();
+        let nameMatch = movieName.includes(searchTerm.toLowerCase());
+        if (!nameMatch) {
+            movies[i].classList.add("hidden");
+        } else {
+            movies[i].classList.remove("hidden");
+        }
+    }
+}
+
+document.querySelector(".searchbar").addEventListener('input', searchFilms);
+
+
+</script>
+
+
+{% endblock %}
