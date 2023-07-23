@@ -1,0 +1,22 @@
+Hey Ally,
+
+Just went through your Django project and here's some feedback:
+
+- In terms of project structure and file organization, you've done quite a good job. However, separating your authentication views from the rest of your views would make it easier to navigate your codebase.
+
+- Your code readability and formatting is great! Keep up with that.
+
+- You show a strong command of Django and the Django REST Framework features. No additional comments there, keep it up.
+
+- Your database models are on point and well designed. This will definitely help with data consistency and make it easier to understand the structure of your data.
+
+- When it comes to views and URL design, you've done a good job. However, I would suggest to use Django's `include` feature for organizing URL patterns. This can help reduce URL pattern clutter and increase maintainability of your code.
+
+- Your error handling and validation is good, but not without room for improvement. Even when you think it's not necessary, it's a good practice to implement error handling. Consider using try-except clauses for handling errors gracefully.
+
+- Now, on the topic of documentation, it seems you could invest some more effort here. Remember, documenting your functions and classes is crucial. It helps others (and future you) understand your thinking process and the purpose of your code. Also, make sure to add comments to temporary 'test' functions to denote their temporary status or explain their purpose.
+
+In general, your project is quite well developed but pay attention to these feedback points, especially around views organization and documentation. Keep up the hard work!
+
+Best,
+Yossi.
